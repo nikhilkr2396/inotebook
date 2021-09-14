@@ -16,7 +16,7 @@ router.get('/fetchallnotes', fetchuser, async (req, res) => {
     
 })
 
-// ROUTE 2: Add a New Notes using : POST "/api/notes/addnote". Login required.
+// ROUTE 2: Add a New Note using : POST "/api/notes/addnote". Login required.
 router.post('/addnote', fetchuser, [
     body('title',"Enter a Title with at least 3 character").isLength({ min: 3 }),
     body('description',"Enter a Discription with at least 5 character").isLength({ min: 5 })
@@ -44,7 +44,43 @@ router.post('/addnote', fetchuser, [
    
 })
 
-// ROUTE 3: Delete a Notes using : POST "/api/notes/deletenote". Login required.
+// NOTE => For updation we use PUT request
+// ROUTE 3: Update a Note using : PUT "/api/notes/updatenote/:id". Login required.
+router.put('/updatenote/:id', fetchuser, [
+    body('title',"Enter a Title with at least 3 character").isLength({ min: 3 }),
+    body('description',"Enter a Discription with at least 5 character").isLength({ min: 5 })
+],   
+  async (req, res) => {
+    try {
+        const {title, description, tags} = req.body;
+
+        // 1. Create a newNote object 
+        const newNote = {}
+        if(title){newNote.title = title};
+        if(description){newNote.description = description};
+        if(tags){newNote.tags = tags};
+
+        // 2. Find the note that has to be update and update that note
+        let note = await Note.findById(req.params.id);
+       
+        if(!note){
+            return res.status(404).send("Not Found");
+        }
+
+        if(note.user.toString() !== req.user.id){
+            return res.status(401).send("Not Authorized");
+        }
+
+        note = await Note.findByIdAndUpdate(req.params.id,{$set : newNote}, {new : true});
+        
+        res.json(note);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send("Something went wrong");
+    }
+})
+
+// ROUTE 4: Delete a Note using : POST "/api/notes/deletenote". Login required.
 // router.post('/deletenote', fetchuser, async (req, res) => {
 //     const notes = await Notes.find({ user : req.user.id})
 //     res.json(notes);
