@@ -80,10 +80,32 @@ router.put('/updatenote/:id', fetchuser, [
     }
 })
 
-// ROUTE 4: Delete a Note using : POST "/api/notes/deletenote". Login required.
-// router.post('/deletenote', fetchuser, async (req, res) => {
-//     const notes = await Notes.find({ user : req.user.id})
-//     res.json(notes);
-// })
+// ROUTE 4: Delete a Note using : DELETE "/api/notes/deletenote". Login required.
+router.delete('/deletenote/:id', fetchuser, [
+    body('title',"Enter a Title with at least 3 character").isLength({ min: 3 }),
+    body('description',"Enter a Discription with at least 5 character").isLength({ min: 5 })
+],   
+  async (req, res) => {
+    try {
+        // Find the note that has to be delete and delete that note
+        let note = await Note.findById(req.params.id);
+       
+        if(!note){
+            return res.status(404).send("Not Found");
+        }
+
+        // Allow deletion only if it's belong to the authorized user
+        if(note.user.toString() !== req.user.id){
+            return res.status(401).send("Not Authorized");
+        }
+
+        note = await Note.findByIdAndDelete(req.params.id);
+        
+        res.json({"Success" : "Note has been deleted"});
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send("Something went wrong");
+    }
+})
 
 module.exports = router;
